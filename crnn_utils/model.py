@@ -1,37 +1,58 @@
 import torch
 import torch.nn as nn
 
+from torchvision.models import resnet18
+
+
+start = 44032  # '가'의 유니코드 값
+char_korean = list(chr(start + i) for i in range(11172))
+
+idx2char = {i: char for i, char in enumerate(char_korean)}
+char2idx = {char: i for i, char in idx2char.items()}
+
 
 class CRNN(nn.Module):
-    def __init__(self, img_height, img_channels, num_classes, hidden_size=256):
+    def __init__(self, num_chars=len(char2idx), rnn_hidden_size=256):
         super(CRNN, self).__init__()
+        self.num_chars = num_chars
+        self.rnn_hidden_size = rnn_hidden_size
 
-        # CNN layers
-        self.cnn = nn.Sequential(
-            nn.Conv2d(img_channels, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(kernel_size=2, stride=2),
-            # Add more convolutional layers as needed
+        # CNN Backbone = 사전학습된 resnet18 활용
+        # https://arxiv.org/abs/1512.03385
+        resnet = resnet18(pretrained=True)
+        # CNN Feature Extract
+        resnet_modules = list(resnet.children())[:-3]
+        self.feature_extract = nn.Sequential(
+            *resnet_modules,
+            nn.Conv2d(256, 256, kernel_size=(3, 6), stride=1, padding=1),
+            nn.BatchNorm2d(256),
+            nn.ReLU(inplace=True)
         )
 
-        # RNN layers
-        self.rnn = nn.LSTM(64, hidden_size, bidirectional=True, batch_first=True)
+        self.linear1 = nn.Linear(1024, rnn_hidden_size)
 
-        # Fully connected layer
-        self.fc = nn.Linear(hidden_size * 2, num_classes)
+        # RNN
+        self.rnn = nn.RNN(input_size=rnn_hidden_size,
+                          hidden_size=rnn_hidden_size,
+                          bidirectional=True,
+                          batch_first=True)
+        self.linear2 = nn.Linear(self.rnn_hidden_size * 2, num_chars)
 
     def forward(self, x):
-        # CNN forward pass
-        x = self.cnn(x)
+        # CNN
+        x = self.feature_extract(x)  # [batch_size, channels, height, width]
+        x = x.permute(0, 3, 1, 2)  # [batch_size, width, channels, height]
 
-        # Prepare data for RNN
-        x = x.squeeze(2)
-        x = x.permute(0, 2, 1)
+        batch_size = x.size(0)
+        T = x.size(1)
+        x = x.view(batch_size, T, -1)  # [batch_size, T==width, num_features==channels*height]
+        x = self.linear1(x)
 
-        # RNN forward pass
-        x, _ = self.rnn(x)
+        # RNN
+        x, hidden = self.rnn(x)
 
-        # Fully connected layer
-        x = self.fc(x)
+        output = self.linear2(x)
+        output = output.permute(1, 0, 2)  # [T==10, batch_size, num_classes==num_features]
 
-        return x
+        return output
+

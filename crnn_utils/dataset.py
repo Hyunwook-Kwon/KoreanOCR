@@ -7,25 +7,41 @@ import json
 
 from PIL import Image
 
-import cv2
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon
 
 from glob import glob
 
 
+def test_transform(image):
+    transform_ops = transforms.Compose([
+        transforms.Resize((64, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    ])
+    return transform_ops(image)
+
+
+def train_transform(image):
+    transform_ops = transforms.Compose([
+        transforms.Resize((64, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+    ])
+    return transform_ops(image)
+
+
 class CustomDatasetWithBoundingBox(Dataset):
 
-    def __init__(self, json_path='printed_data_info.json', origin_data_path='./test', result_data_path='./result',
-                 transform=None):
+    def __init__(self, json_path='printed_data_info.json', origin_data_path='./test', result_data_path='./result', train_mode=True):
+        self.train_mode = train_mode
 
         with open(json_path, 'r', encoding='utf-8') as f:
             json_data = json.load(f)
 
-        # self.types = []
         self.labels = []
         for i in json_data['annotations']:
-            # self.types.append((i['attributes']['type']))
             self.labels.append(i['text'])
 
         self.poly_files = glob(result_data_path + '/*.txt')
@@ -42,21 +58,24 @@ class CustomDatasetWithBoundingBox(Dataset):
 
         self.image_files = glob(origin_data_path + '/*.png')
 
-        self.images = [cv2.imread(i) for i in self.image_files]
+        self.images = []
+        for i in self.image_files:
+            self.images.append(Image.open(i).convert('RGB'))
+
         self.data = list(zip(self.images, self.polys, self.labels))
-        self.transform = transform
 
     def __len__(self):
         return len(self.image_files)
 
     def __getitem__(self, idx):
         image = self.data[idx][0]
-        image = Image.fromarray(image)
         boxes = self.data[idx][1]
         labels = self.data[idx][2]
 
-        if self.transform:
-            image = self.transform(image)
+        if self.train_mode:
+            image = train_transform(image)
+        else:
+            image = test_transform(image)
 
         return image, labels, boxes
 
@@ -70,6 +89,8 @@ class CustomDatasetWithBoundingBox(Dataset):
         plt.show()
 
 
+
+
 def collate_fn(batch):
     images, labels, bounding_boxes = zip(*batch)
 
@@ -77,12 +98,12 @@ def collate_fn(batch):
 
     # 레이블을 정수 시퀀스로 변환
     start = 44032  # '가'의 유니코드 값
-    char_set_korean = list(chr(start + i) for i in range(11172))
+    char_korean = list(chr(start + i) for i in range(11172))
 
     # 레이블을 정수 시퀀스로 변환
     label_lengths = torch.tensor([len(label) for label in labels])
     targets = torch.nn.utils.rnn.pad_sequence([
-        torch.tensor([char_set_korean.index(char) for char in label], dtype=torch.long) for label in labels
+        torch.tensor([char_korean.index(char) for char in label], dtype=torch.long) for label in labels
     ], batch_first=True)
 
     # 바운딩 박스 정보를 텐서로 변환 (좌표를 정규화하여 표현)
