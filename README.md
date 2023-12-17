@@ -30,7 +30,7 @@
 
 #### 1.2.3 데이터셋 
 - 한글 OCR 모델을 개발하고 학습시키기 위해서는 한글 데이터셋이 필요하다.
-- 본 프로젝트에서는 <a href = https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=81 > 한국어 글자체 이미지</a>를 사용한다. 
+- 본 프로젝트에서는 <a href = "https://aihub.or.kr/aihubdata/data/view.do?currMenu=115&topMenu=100&aihubDataSe=realm&dataSetSn=81" > 한국어 글자체 이미지</a>를 사용한다. 
 - 현대 한글 11,172자를 사용한 폰트 50종의 글자체와 성별, 연령층 별로 직접 제작한 이미지 파일 구축 및 간판, 상표, 교통 표지판 등의 한글이 포함된 이미지 10만 장을 구축한 이미지 데이터를 제공한다.
    구축내용
     - 현대 한글 글자체 데이터셋 : 현대 한글 문자 11,172자에 대한 인쇄체 및 손글씨체 500만자, text in the wild 10만장
@@ -94,9 +94,9 @@
     2.2 torch버전에 따른 error 해결 2
   - CRAFT 모델에서 사용하는 model.VGG16_BN(pretrained=False)과 같은 코드의 pretrained는 높은 버전의 토치에서는 사용할 수 없다.
   - CRAFT-pytorch/basenet/vgg16_bn.py와 /craft.py에 pretrained를 지우고 weights='VGG16_BN_Weights.DEFAULT'를 사용하면 해결된다.
-  - <a href = https://github.com/JaidedAI/EasyOCR/issues/766>참고<a>
+  - <a href = "https://github.com/JaidedAI/EasyOCR/issues/766">참고</a>
   
-  3. CRAFT 사전 학습 모델을<a href =https://drive.google.com/open?id=1Jk4eGD7crsqCCg9C9VjCLkMN3ze8kutZ> 다운로드</a>받아서 CRAFT-pytorch/model 폴더에 넣는다.
+  3. CRAFT 사전 학습 모델을 <a href = "https://drive.google.com/open?id=1Jk4eGD7crsqCCg9C9VjCLkMN3ze8kutZ">다운로드</a>받아서 CRAFT-pytorch/model 폴더에 넣는다.
   4. 다음 명령어를 통해 CRAFT 모델을 실행 시킬 수 있다. 
     ```
    !python ./CRAFT-pytorch/test.py --trained_model={model_path} --test_folder={test_folder} --cuda=True
