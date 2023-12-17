@@ -96,7 +96,9 @@
   - CRAFT-pytorch/basenet/vgg16_bn.py와 /craft.py에 pretrained를 지우고 weights='VGG16_BN_Weights.DEFAULT'를 사용하면 해결된다.
   - <a href = "https://github.com/JaidedAI/EasyOCR/issues/766">참고</a>
   
+
   3. CRAFT 사전 학습 모델을 <a href = "https://drive.google.com/open?id=1Jk4eGD7crsqCCg9C9VjCLkMN3ze8kutZ">다운로드</a>받아서 CRAFT-pytorch/model 폴더에 넣는다.
+
   4. 다음 명령어를 통해 CRAFT 모델을 실행 시킬 수 있다. 
     ```
    !python ./CRAFT-pytorch/test.py --trained_model={model_path} --test_folder={test_folder} --cuda=True
